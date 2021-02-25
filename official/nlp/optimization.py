@@ -22,7 +22,7 @@ import re
 from absl import logging
 import gin
 import tensorflow as tf
-import tensorflow_addons.optimizers as tfa_optimizers
+# import tensorflow_addons.optimizers as tfa_optimizers
 
 
 class WarmUp(tf.keras.optimizers.schedules.LearningRateSchedule):
@@ -96,13 +96,14 @@ def create_optimizer(init_lr,
         exclude_from_weight_decay=['LayerNorm', 'layer_norm', 'bias'])
   elif optimizer_type == 'lamb':
     logging.info('using Lamb optimizer')
-    optimizer = tfa_optimizers.LAMB(
-        learning_rate=lr_schedule,
-        weight_decay_rate=0.01,
-        beta_1=0.9,
-        beta_2=0.999,
-        epsilon=1e-6,
-        exclude_from_weight_decay=['LayerNorm', 'layer_norm', 'bias'])
+    raise NotImplementedError()
+    # optimizer = tfa_optimizers.LAMB(
+    #     learning_rate=lr_schedule,
+    #     weight_decay_rate=0.01,
+    #     beta_1=0.9,
+    #     beta_2=0.999,
+    #     epsilon=1e-6,
+    #     exclude_from_weight_decay=['LayerNorm', 'layer_norm', 'bias'])
   else:
     raise ValueError('Unsupported optimizer type: ', optimizer_type)
 
