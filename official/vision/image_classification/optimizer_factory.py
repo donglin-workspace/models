@@ -20,7 +20,7 @@ from __future__ import print_function
 
 from absl import logging
 import tensorflow as tf
-import tensorflow_addons as tfa
+# import tensorflow_addons as tfa
 
 from typing import Any, Dict, Text, List
 from official.vision.image_classification import learning_rate
@@ -303,21 +303,23 @@ def build_optimizer(
                                          epsilon=epsilon)
   elif optimizer_name == 'adamw':
     logging.info('Using AdamW')
-    weight_decay = params.get('weight_decay', 0.01)
-    beta_1 = params.get('beta_1', 0.9)
-    beta_2 = params.get('beta_2', 0.999)
-    epsilon = params.get('epsilon', 1e-07)
-    optimizer = tfa.optimizers.AdamW(weight_decay=weight_decay,
-                                     learning_rate=base_learning_rate,
-                                     beta_1=beta_1,
-                                     beta_2=beta_2,
-                                     epsilon=epsilon)
+    raise NotImplementedError()
+    # weight_decay = params.get('weight_decay', 0.01)
+    # beta_1 = params.get('beta_1', 0.9)
+    # beta_2 = params.get('beta_2', 0.999)
+    # epsilon = params.get('epsilon', 1e-07)
+    # optimizer = tfa.optimizers.AdamW(weight_decay=weight_decay,
+    #                                  learning_rate=base_learning_rate,
+    #                                  beta_1=beta_1,
+    #                                  beta_2=beta_2,
+    #                                  epsilon=epsilon)
   else:
     raise ValueError('Unknown optimizer %s' % optimizer_name)
 
   if params.get('lookahead', None):
     logging.info('Using lookahead optimizer.')
-    optimizer = tfa.optimizers.Lookahead(optimizer)
+    raise NotImplementedError()
+    # optimizer = tfa.optimizers.Lookahead(optimizer)
 
   # Moving average should be applied last, as it's applied at test time
   moving_average_decay = params.get('moving_average_decay', 0.)
