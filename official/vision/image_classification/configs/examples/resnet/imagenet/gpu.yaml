@@ -2,8 +2,8 @@
 # Reaches > 76.1% within 90 epochs.
 # Note: This configuration uses a scaled per-replica batch size based on the number of devices.
 runtime:
-  distribution_strategy: 'off'
-  num_gpus: 1
+  distribution_strategy: 'mirror'
+  num_gpus: 4
   batchnorm_spatial_persistent: True
 train_dataset:
   name: 'imagenet2012'
@@ -13,7 +13,7 @@ train_dataset:
   image_size: 224
   num_classes: 1000
   num_examples: 1281167
-  batch_size: 128
+  batch_size: 256
   use_per_replica_batch_size: True
   dtype: 'float32'
   mean_subtract: True
