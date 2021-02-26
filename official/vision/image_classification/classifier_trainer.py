@@ -293,6 +293,10 @@ def train_and_eval(
   """Runs the train and eval path using compile/fit."""
   logging.info('Running train and eval.')
 
+  physical_devices = tf.config.list_physical_devices('GPU')
+  for gpu in physical_devices:
+      tf.config.experimental.set_memory_growth(gpu, True)
+
   distribution_utils.configure_cluster(
       params.runtime.worker_hosts,
       params.runtime.task_index)
@@ -352,8 +356,7 @@ def train_and_eval(
       loss_obj = tf.keras.losses.SparseCategoricalCrossentropy()
     model.compile(optimizer=optimizer,
                   loss=loss_obj,
-                  metrics=metrics,
-                  experimental_steps_per_execution=steps_per_loop)
+                  metrics=metrics)
 
     initial_epoch = 0
     if params.train.resume_checkpoint:

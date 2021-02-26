@@ -306,6 +306,9 @@ class DatasetBuilder:
     Returns:
       A TensorFlow dataset outputting batched images and labels.
     """
+    assert input_context is None or input_context.num_input_pipelines == 1
+    assert input_context is None or input_context.input_pipeline_id == 0
+
     builders = {
         'tfds': self.load_tfds,
         'records': self.load_records,

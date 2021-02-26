@@ -23,7 +23,7 @@ from absl import flags
 import tensorflow as tf
 
 from tensorflow.python.keras.optimizer_v2 import gradient_descent as gradient_descent_v2
-import tensorflow_model_optimization as tfmot
+# import tensorflow_model_optimization as tfmot
 from official.utils.flags import core as flags_core
 from official.utils.misc import keras_utils
 
@@ -123,10 +123,11 @@ def get_callbacks(
 
   is_pruning_enabled = pruning_method is not None
   if is_pruning_enabled:
-    callbacks.append(tfmot.sparsity.keras.UpdatePruningStep())
-    if model_dir is not None:
-      callbacks.append(tfmot.sparsity.keras.PruningSummaries(
-          log_dir=model_dir, profile_batch=0))
+    raise NotImplementedError()
+    # callbacks.append(tfmot.sparsity.keras.UpdatePruningStep())
+    # if model_dir is not None:
+    #   callbacks.append(tfmot.sparsity.keras.PruningSummaries(
+    #       log_dir=model_dir, profile_batch=0))
 
   if enable_checkpoint_and_export:
     if model_dir is not None:

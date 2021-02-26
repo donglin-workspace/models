@@ -14,13 +14,13 @@
                 "--mode=train_and_eval",
                 "--model_type=resnet",
                 "--dataset=imagenet",
-                "--model_dir=./ckptmodel/",
+                "--model_dir=./ckptmode2/",
                 "--data_dir=/mnt/datasets/",
                 "--config_file=./official/vision/image_classification/configs/examples/resnet/imagenet/gpu.yaml"
             ],
             "env": {
                 "PYTHONPATH" : "./",
-                "CUDA_VISIBLE_DEVICES": ""
+                "CUDA_VISIBLE_DEVICES": "0"
             }
         }
     ]

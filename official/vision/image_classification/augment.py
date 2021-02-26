@@ -27,7 +27,7 @@ import math
 import tensorflow as tf
 from typing import Any, Dict, List, Optional, Text, Tuple
 
-from tensorflow.python.keras.layers.preprocessing import image_preprocessing as image_ops
+# from tensorflow.python.keras.layers.preprocessing import image_preprocessing as image_ops
 
 # This signifies the max integer that the controller RNN could predict for the
 # augmentation scheme.
@@ -167,15 +167,16 @@ def _convert_angles_to_transform(
 
 def transform(image: tf.Tensor, transforms) -> tf.Tensor:
   """Prepares input data for `image_ops.transform`."""
+  raise NotImplementedError()
   original_ndims = tf.rank(image)
   transforms = tf.convert_to_tensor(transforms, dtype=tf.float32)
   if transforms.shape.rank == 1:
     transforms = transforms[None]
   image = to_4d(image)
-  image = image_ops.transform(
-      images=image,
-      transforms=transforms,
-      interpolation='nearest')
+  # image = image_ops.transform(
+  #     images=image,
+  #     transforms=transforms,
+  #     interpolation='nearest')
   return from_4d(image, original_ndims)
 
 
