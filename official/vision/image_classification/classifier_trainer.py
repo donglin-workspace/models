@@ -425,17 +425,17 @@ def train_and_eval(
   else:
     validation_kwargs = {
         'validation_data': validation_dataset,
-        # 'validation_steps': validation_steps,
-        'validation_steps': 10,
+        'validation_steps': validation_steps,
+        # 'validation_steps': 10,
         'validation_freq': params.evaluation.epochs_between_evals,
     }
 
   history = model.fit(
       train_dataset,
-      # epochs=train_epochs,
-      # steps_per_epoch=train_steps,
-      epochs=2,
-      steps_per_epoch=10,
+      epochs=train_epochs,
+      steps_per_epoch=train_steps,
+      # epochs=2,
+      # steps_per_epoch=10,
       initial_epoch=initial_epoch,
       callbacks=callbacks,
       verbose=2,
