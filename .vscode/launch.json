@@ -16,6 +16,8 @@
                 "--dataset=imagenet",
                 "--model_dir=./ckptmode2/",
                 "--data_dir=/mnt/datasets/",
+                "--deterministic_init",
+                "--deterministic_input",
                 "--config_file=./official/vision/image_classification/configs/examples/resnet/imagenet/gpu.yaml"
             ],
             "env": {

@@ -213,7 +213,7 @@ def decode_and_center_crop(image_bytes: tf.Tensor,
   return image
 
 
-def decode_crop_and_flip(image_bytes: tf.Tensor) -> tf.Tensor:
+def decode_crop_and_flip(image_bytes: tf.Tensor, deterministic: bool) -> tf.Tensor:
   """Crops an image to a random part of the image, then randomly flips.
 
   Args:
@@ -234,7 +234,7 @@ def decode_crop_and_flip(image_bytes: tf.Tensor) -> tf.Tensor:
       aspect_ratio_range=[0.75, 1.33],
       area_range=[0.05, 1.0],
       max_attempts=100,
-      use_image_if_no_bounding_boxes=True)
+      use_image_if_no_bounding_boxes=True, seed= 1 if deterministic else 0)
   bbox_begin, bbox_size, _ = sample_distorted_bounding_box
 
   # Reassemble the bounding box in the format the crop op requires.
@@ -255,7 +255,7 @@ def decode_crop_and_flip(image_bytes: tf.Tensor) -> tf.Tensor:
                                             channels=3)
 
   # Flip to add a little more random distortion in.
-  cropped = tf.image.random_flip_left_right(cropped)
+  cropped = tf.image.random_flip_left_right(cropped, seed=1 if deterministic else None)
   return cropped
 
 
@@ -358,6 +358,7 @@ def build_eval_dataset(filenames: List[Text],
 
 
 def preprocess_for_train(image_bytes: tf.Tensor,
+                         deterministic: bool,
                          image_size: int = IMAGE_SIZE,
                          augmenter: Optional[augment.ImageAugment] = None,
                          mean_subtract: bool = False,
@@ -377,12 +378,13 @@ def preprocess_for_train(image_bytes: tf.Tensor,
   Returns:
     A preprocessed and normalized image `Tensor`.
   """
-  images = decode_crop_and_flip(image_bytes=image_bytes)
+  images = decode_crop_and_flip(image_bytes=image_bytes, deterministic=deterministic)
   images = resize_image(images, height=image_size, width=image_size)
   if mean_subtract:
     images = mean_image_subtraction(image_bytes=images, means=MEAN_RGB)
   if standardize:
     images = standardize_image(image_bytes=images, stddev=STDDEV_RGB)
+  assert augmenter is None
   if augmenter is not None:
     images = augmenter.distort(images)
   if dtype is not None:

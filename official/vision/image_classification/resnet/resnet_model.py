@@ -37,12 +37,18 @@ from official.vision.image_classification.resnet import imagenet_preprocessing
 
 layers = tf.keras.layers
 
+seed_cnt = 0
+def get_seed():
+  global seed_cnt
+  seed_cnt = seed_cnt + 1 
+  return seed_cnt
 
 def _gen_l2_regularizer(use_l2_regularizer=True, l2_weight_decay=1e-4):
   return regularizers.l2(l2_weight_decay) if use_l2_regularizer else None
 
 
 def identity_block(input_tensor,
+                   deterministic,
                    kernel_size,
                    filters,
                    stage,
@@ -76,7 +82,7 @@ def identity_block(input_tensor,
   x = layers.Conv2D(
       filters1, (1, 1),
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name=conv_name_base + '2a')(
           input_tensor)
@@ -93,7 +99,7 @@ def identity_block(input_tensor,
       kernel_size,
       padding='same',
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name=conv_name_base + '2b')(
           x)
@@ -108,7 +114,7 @@ def identity_block(input_tensor,
   x = layers.Conv2D(
       filters3, (1, 1),
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name=conv_name_base + '2c')(
           x)
@@ -125,6 +131,7 @@ def identity_block(input_tensor,
 
 
 def conv_block(input_tensor,
+               deterministic,
                kernel_size,
                filters,
                stage,
@@ -164,7 +171,7 @@ def conv_block(input_tensor,
   x = layers.Conv2D(
       filters1, (1, 1),
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name=conv_name_base + '2a')(
           input_tensor)
@@ -182,7 +189,7 @@ def conv_block(input_tensor,
       strides=strides,
       padding='same',
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name=conv_name_base + '2b')(
           x)
@@ -197,7 +204,7 @@ def conv_block(input_tensor,
   x = layers.Conv2D(
       filters3, (1, 1),
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name=conv_name_base + '2c')(
           x)
@@ -212,7 +219,7 @@ def conv_block(input_tensor,
       filters3, (1, 1),
       strides=strides,
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name=conv_name_base + '1')(
           input_tensor)
@@ -229,6 +236,7 @@ def conv_block(input_tensor,
 
 
 def resnet50(num_classes,
+             deterministic: bool,
              batch_size=None,
              use_l2_regularizer=True,
              rescale_inputs=False,
@@ -278,7 +286,7 @@ def resnet50(num_classes,
       strides=(2, 2),
       padding='valid',
       use_bias=False,
-      kernel_initializer='he_normal',
+      kernel_initializer=tf.keras.initializers.he_normal(seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name='conv1')(
           x)
@@ -292,30 +300,30 @@ def resnet50(num_classes,
   x = layers.MaxPooling2D((3, 3), strides=(2, 2), padding='same')(x)
 
   x = conv_block(
-      x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), **block_config)
-  x = identity_block(x, 3, [64, 64, 256], stage=2, block='b', **block_config)
-  x = identity_block(x, 3, [64, 64, 256], stage=2, block='c', **block_config)
+      x, deterministic, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), **block_config)
+  x = identity_block(x, deterministic, 3, [64, 64, 256], stage=2, block='b', **block_config)
+  x = identity_block(x, deterministic, 3, [64, 64, 256], stage=2, block='c', **block_config)
 
-  x = conv_block(x, 3, [128, 128, 512], stage=3, block='a', **block_config)
-  x = identity_block(x, 3, [128, 128, 512], stage=3, block='b', **block_config)
-  x = identity_block(x, 3, [128, 128, 512], stage=3, block='c', **block_config)
-  x = identity_block(x, 3, [128, 128, 512], stage=3, block='d', **block_config)
+  x = conv_block(x, deterministic, 3, [128, 128, 512], stage=3, block='a', **block_config)
+  x = identity_block(x, deterministic, 3, [128, 128, 512], stage=3, block='b', **block_config)
+  x = identity_block(x, deterministic, 3, [128, 128, 512], stage=3, block='c', **block_config)
+  x = identity_block(x, deterministic, 3, [128, 128, 512], stage=3, block='d', **block_config)
 
-  x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a', **block_config)
-  x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b', **block_config)
-  x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c', **block_config)
-  x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d', **block_config)
-  x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e', **block_config)
-  x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f', **block_config)
+  x = conv_block(x, deterministic, 3, [256, 256, 1024], stage=4, block='a', **block_config)
+  x = identity_block(x, deterministic, 3, [256, 256, 1024], stage=4, block='b', **block_config)
+  x = identity_block(x, deterministic, 3, [256, 256, 1024], stage=4, block='c', **block_config)
+  x = identity_block(x, deterministic, 3, [256, 256, 1024], stage=4, block='d', **block_config)
+  x = identity_block(x, deterministic, 3, [256, 256, 1024], stage=4, block='e', **block_config)
+  x = identity_block(x, deterministic, 3, [256, 256, 1024], stage=4, block='f', **block_config)
 
-  x = conv_block(x, 3, [512, 512, 2048], stage=5, block='a', **block_config)
-  x = identity_block(x, 3, [512, 512, 2048], stage=5, block='b', **block_config)
-  x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c', **block_config)
+  x = conv_block(x, deterministic, 3, [512, 512, 2048], stage=5, block='a', **block_config)
+  x = identity_block(x, deterministic, 3, [512, 512, 2048], stage=5, block='b', **block_config)
+  x = identity_block(x, deterministic, 3, [512, 512, 2048], stage=5, block='c', **block_config)
 
   x = layers.GlobalAveragePooling2D()(x)
   x = layers.Dense(
       num_classes,
-      kernel_initializer=initializers.RandomNormal(stddev=0.01),
+      kernel_initializer=initializers.RandomNormal(stddev=0.01, seed=get_seed() if deterministic else None),
       kernel_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       bias_regularizer=_gen_l2_regularizer(use_l2_regularizer),
       name='fc1000')(

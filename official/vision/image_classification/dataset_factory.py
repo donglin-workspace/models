@@ -164,10 +164,11 @@ class DatasetBuilder:
   training set split, batch size, and number of steps (batches).
   """
 
-  def __init__(self, config: DatasetConfig, **overrides: Any):
+  def __init__(self, config: DatasetConfig, deterministic: bool, **overrides: Any):
     """Initialize the builder from the config."""
     self.config = config.replace(**overrides)
     self.builder_info = None
+    self.deterministic = deterministic
 
     if self.config.augmenter is not None:
       logging.info('Using augmentation: %s', self.config.augmenter.name)
@@ -345,10 +346,15 @@ class DatasetBuilder:
     if self.config.skip_decoding:
       decoders['image'] = tfds.decode.SkipDecoding()
 
+    if self.deterministic:
+      shuffle_seed = 1
+    else:
+      shuffle_seed = None
+
     read_config = tfds.ReadConfig(
-        interleave_cycle_length=10,
-        interleave_block_length=1,
-        input_context=self.input_context)
+        interleave_cycle_length=16,
+        interleave_block_length=8,
+        input_context=self.input_context, shuffle_seed=shuffle_seed)
 
     dataset = builder.as_dataset(
         split=self.config.split,
@@ -427,7 +433,7 @@ class DatasetBuilder:
       dataset = dataset.cache()
 
     if self.is_training:
-      dataset = dataset.shuffle(self.config.shuffle_buffer_size)
+      dataset = dataset.shuffle(self.config.shuffle_buffer_size, seed = 1 if self.deterministic else None)
       dataset = dataset.repeat()
 
     # Parse, pre-process, and batch the data in parallel
@@ -435,8 +441,12 @@ class DatasetBuilder:
       preprocess = self.parse_record
     else:
       preprocess = self.preprocess
-    dataset = dataset.map(preprocess,
-                          num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    
+    if self.deterministic:
+      dataset = dataset.map(preprocess, num_parallel_calls=1)
+    else:
+      dataset = dataset.map(preprocess,
+                            num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     if self.input_context and self.config.num_devices > 1:
       if not self.config.use_per_replica_batch_size:
@@ -514,6 +524,7 @@ class DatasetBuilder:
     if self.is_training:
       image = preprocessing.preprocess_for_train(
           image,
+          deterministic=self.deterministic,
           image_size=self.image_size,
           mean_subtract=self.config.mean_subtract,
           standardize=self.config.standardize,

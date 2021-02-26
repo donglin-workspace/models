@@ -93,7 +93,9 @@ class ResNetImagenetConfig(base_configs.ExperimentConfig):
       epochs_between_evals=1,
       steps=None)
   model: base_configs.ModelConfig = resnet_config.ResNetModelConfig()
-
+  deterministic_init: bool = False
+  deterministic_input: bool = False
+  deterministic_tf: bool = False
 
 def get_config(model: str, dataset: str) -> base_configs.ExperimentConfig:
   """Given model and dataset names, return the ExperimentConfig."""

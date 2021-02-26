@@ -27,7 +27,13 @@ import tensorflow as tf
 from official.utils.misc import keras_utils
 from official.vision.image_classification import optimizer_factory
 
-
+class SaveModelCallback(tf.keras.callbacks.Callback):
+  def __init__(self, path: str) -> None:
+      super().__init__()
+      self.path = path
+  def on_epoch_end(self, epoch, logs=None):
+    tf.keras.models.save_model(self.model, self.path, include_optimizer=False, save_format='h5')
+          
 def get_callbacks(model_checkpoint: bool = True,
                   include_tensorboard: bool = True,
                   time_history: bool = True,
@@ -42,9 +48,12 @@ def get_callbacks(model_checkpoint: bool = True,
   model_dir = model_dir or ''
   callbacks = []
   if model_checkpoint:
-    ckpt_full_path = os.path.join(model_dir, 'model.ckpt-{epoch:04d}')
-    callbacks.append(tf.keras.callbacks.ModelCheckpoint(
-        ckpt_full_path, save_weights_only=True, verbose=1))
+    # ckpt_full_path = os.path.join(model_dir, 'model.ckpt-{epoch:04d}')
+    # callbacks.append(tf.keras.callbacks.ModelCheckpoint(
+    #     ckpt_full_path, save_weights_only=True, verbose=1))
+    ckpt_full_path = os.path.join(model_dir, 'ckpt.h5')
+    callbacks.append(SaveModelCallback(ckpt_full_path))
+
   if include_tensorboard:
     callbacks.append(
         CustomTensorBoard(

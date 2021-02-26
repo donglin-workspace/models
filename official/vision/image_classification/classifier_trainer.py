@@ -81,6 +81,37 @@ def _get_metrics(one_hot: bool) -> Mapping[Text, Any]:
             name='top_5_accuracy'),
     }
 
+import hashlib
+import numpy as np
+def get_weight_hash(model):
+  with open(os.path.join(flags.FLAGS.model_dir, 'hash.txt'), 'a') as f:
+    for w in model.weights:
+      name = w.name
+      w = w.numpy()
+      if w.flags.writeable:
+        w.flags.writeable = False
+      
+      f.write(name + ' ' + hashlib.md5(w.tobytes()).hexdigest() + '\n')
+def get_input_hash(train_data):
+  arr_x = []
+  arr_y = []
+  step = 0
+  for x, y in train_data:
+    if step <= 100:
+      arr_x.extend(np.split(x.numpy(), x.numpy().shape[0], axis=0))
+      arr_y.extend(np.split(y.numpy(), y.numpy().shape[0], axis=0))
+    else:
+      break
+    step = step + 1
+  arr_x = np.array(arr_x)
+  arr_y = np.array(arr_y)
+  
+  arr_x.flags.writeable = False
+  arr_y.flags.writeable = False
+
+  with open(os.path.join(flags.FLAGS.model_dir, 'hash.txt'), 'a') as f:
+    f.write('train data x hash:' + hashlib.md5(arr_x.tobytes()).hexdigest() + '\n')
+    f.write('train data y hash:' + hashlib.md5(arr_y.tobytes()).hexdigest() + '\n')
 
 def get_image_size_from_model(
     params: base_configs.ExperimentConfig) -> Optional[int]:
@@ -116,6 +147,7 @@ def _get_dataset_builders(params: base_configs.ExperimentConfig,
     if config is not None and config.has_data:
       builder = dataset_factory.DatasetBuilder(
           config,
+          deterministic=params.deterministic_input,
           image_size=image_size or config.image_size,
           num_devices=num_devices,
           one_hot=one_hot)
@@ -169,6 +201,9 @@ def _get_params_from_flags(flags_obj: flags.FlagValues):
               'log_steps': flags_obj.log_steps,
           },
       },
+      'deterministic_init': flags_obj.deterministic_init,
+      'deterministic_input': flags_obj.deterministic_input,
+      'deterministic_tf': flags_obj.deterministic_tf,
   }
 
   overriding_configs = (flags_obj.config_file,
@@ -277,6 +312,10 @@ def define_classifier_flags():
       default=100,
       help='The interval of steps between logging of batch level stats.')
 
+  flags.DEFINE_bool('deterministic_init', default=False, help='')
+  flags.DEFINE_bool('deterministic_input', default=False, help='')
+  flags.DEFINE_bool('deterministic_tf', default=False, help='')
+
 
 def serialize_config(params: base_configs.ExperimentConfig,
                      model_dir: str):
@@ -334,6 +373,7 @@ def train_and_eval(
 
   with strategy_scope:
     model_params = params.model.model_params.as_dict()
+    model_params['deterministic'] = params.deterministic_init
     model = get_models()[params.model.name](**model_params)
     learning_rate = optimizer_factory.build_learning_rate(
         params=params.model.learning_rate,
@@ -344,6 +384,9 @@ def train_and_eval(
         optimizer_name=params.model.optimizer.name,
         base_learning_rate=learning_rate,
         params=params.model.optimizer.as_dict())
+    
+    get_input_hash(iter(train_dataset))
+    get_weight_hash(model)
 
     metrics_map = _get_metrics(one_hot)
     metrics = [metrics_map[metric] for metric in params.train.metrics]
@@ -382,14 +425,17 @@ def train_and_eval(
   else:
     validation_kwargs = {
         'validation_data': validation_dataset,
-        'validation_steps': validation_steps,
+        # 'validation_steps': validation_steps,
+        'validation_steps': 10,
         'validation_freq': params.evaluation.epochs_between_evals,
     }
 
   history = model.fit(
       train_dataset,
-      epochs=train_epochs,
-      steps_per_epoch=train_steps,
+      # epochs=train_epochs,
+      # steps_per_epoch=train_steps,
+      epochs=2,
+      steps_per_epoch=10,
       initial_epoch=initial_epoch,
       callbacks=callbacks,
       verbose=2,
@@ -443,6 +489,14 @@ def run(flags_obj: flags.FlagValues,
 
 
 def main(_):
+  if flags.FLAGS.deterministic_tf:
+    logging.info('Enabling deterministic tensorflow operations and cuDNN...')
+    os.environ["TF_DETERMINISTIC_OPS"] = "1"
+    os.environ["TF_CUDNN_DETERMINISTIC"] = "1"
+  
+  if not os.path.exists(flags.FLAGS.model_dir):
+    os.makedirs(flags.FLAGS.model_dir)
+  
   stats = run(flags.FLAGS)
   if stats:
     logging.info('Run stats:\n%s', stats)
