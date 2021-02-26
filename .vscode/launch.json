@@ -19,8 +19,7 @@
                 "--config_file=./official/vision/image_classification/configs/examples/resnet/imagenet/gpu.yaml"
             ],
             "env": {
-                "PYTHONPATH" : "./",
-                "CUDA_VISIBLE_DEVICES": "0"
+                "PYTHONPATH" : "./"
             }
         }
     ]

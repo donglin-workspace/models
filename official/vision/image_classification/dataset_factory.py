@@ -288,8 +288,11 @@ class DatasetBuilder:
                      '%d devices.',
                      strategy.num_replicas_in_sync,
                      self.config.num_devices)
-      dataset = strategy.experimental_distribute_datasets(
-          self._build())
+      # dataset = strategy.experimental_distribute_dataset(
+      #     self._build())
+      # dataset = strategy.experimental_distribute_datasets_from_function(
+      #     self._build)
+      dataset = self._build()
     else:
       dataset = self._build()
 
