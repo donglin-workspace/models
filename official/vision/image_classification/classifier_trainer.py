@@ -37,6 +37,8 @@ from official.vision.image_classification.configs import configs
 from official.vision.image_classification.efficientnet import efficientnet_model
 from official.vision.image_classification.resnet import common
 from official.vision.image_classification.resnet import resnet_model
+import wandb
+from wandb.keras import WandbCallback
 
 
 def get_models() -> Mapping[str, tf.keras.Model]:
@@ -204,6 +206,8 @@ def _get_params_from_flags(flags_obj: flags.FlagValues):
       'deterministic_init': flags_obj.deterministic_init,
       'deterministic_input': flags_obj.deterministic_input,
       'deterministic_tf': flags_obj.deterministic_tf,
+      'project': flags_obj.project,
+      'group': flags_obj.group
   }
 
   overriding_configs = (flags_obj.config_file,
@@ -315,6 +319,8 @@ def define_classifier_flags():
   flags.DEFINE_bool('deterministic_init', default=False, help='')
   flags.DEFINE_bool('deterministic_input', default=False, help='')
   flags.DEFINE_bool('deterministic_tf', default=False, help='')
+  flags.DEFINE_string('project', default='test', help='')
+  flags.DEFINE_string('group', default='test', help='')
 
 
 def serialize_config(params: base_configs.ExperimentConfig,
@@ -331,6 +337,8 @@ def train_and_eval(
     strategy_override: tf.distribute.Strategy) -> Mapping[str, Any]:
   """Runs the train and eval path using compile/fit."""
   logging.info('Running train and eval.')
+
+  wandb.init(project=params.project, group=params.group, save_code=True, config=vars(params))
 
   physical_devices = tf.config.list_physical_devices('GPU')
   for gpu in physical_devices:
@@ -430,6 +438,7 @@ def train_and_eval(
         'validation_freq': params.evaluation.epochs_between_evals,
     }
 
+  callbacks.append(WandbCallback())
   history = model.fit(
       train_dataset,
       epochs=train_epochs,
@@ -450,6 +459,11 @@ def train_and_eval(
   stats = common.build_stats(history,
                              validation_output,
                              callbacks)
+
+  wandb.save(os.path.join(params.model_dir, '*'))
+  wandb.save(os.path.join(os.path.join(params.model_dir, 'train'), '*'))
+  wandb.save(os.path.join(os.path.join(params.model_dir, 'validation'), '*'))
+
   return stats
 
 

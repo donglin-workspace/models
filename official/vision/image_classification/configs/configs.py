@@ -96,6 +96,8 @@ class ResNetImagenetConfig(base_configs.ExperimentConfig):
   deterministic_init: bool = False
   deterministic_input: bool = False
   deterministic_tf: bool = False
+  project: str = 'test'
+  group: str = 'test'
 
 def get_config(model: str, dataset: str) -> base_configs.ExperimentConfig:
   """Given model and dataset names, return the ExperimentConfig."""
