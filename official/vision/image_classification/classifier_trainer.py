@@ -491,8 +491,8 @@ def run(flags_obj: flags.FlagValues,
 def main(_):
   if flags.FLAGS.deterministic_tf:
     logging.info('Enabling deterministic tensorflow operations and cuDNN...')
-    os.environ["TF_DETERMINISTIC_OPS"] = "1"
-    os.environ["TF_CUDNN_DETERMINISTIC"] = "1"
+    os.environ["TF_DETERMINISTIC_OPS"] = '1'
+    os.environ["TF_CUDNN_DETERMINISTIC"] = '1'
   
   if not os.path.exists(flags.FLAGS.model_dir):
     os.makedirs(flags.FLAGS.model_dir)

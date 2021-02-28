@@ -442,11 +442,15 @@ class DatasetBuilder:
     else:
       preprocess = self.preprocess
     
-    if self.deterministic:
-      dataset = dataset.map(preprocess, num_parallel_calls=1)
+    # if self.deterministic:
+    #   dataset = dataset.map(preprocess, num_parallel_calls=1)
+    # else:
+    #   dataset = dataset.map(preprocess,
+    #                         num_parallel_calls=tf.data.experimental.AUTOTUNE)
+    if self.is_training:
+      dataset = dataset.map(self.preprocess_serialize).prefetch(256*4).map(preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE)
     else:
-      dataset = dataset.map(preprocess,
-                            num_parallel_calls=tf.data.experimental.AUTOTUNE)
+      dataset = dataset.map(preprocess, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
     if self.input_context and self.config.num_devices > 1:
       if not self.config.use_per_replica_batch_size:
@@ -518,7 +522,22 @@ class DatasetBuilder:
 
     return image, label
 
-  def preprocess(self, image: tf.Tensor, label: tf.Tensor
+  def preprocess_serialize(self, image_bytes: tf.Tensor, label: tf.Tensor):
+    decoded = image_bytes.dtype != tf.string
+    bbox = tf.constant([0.0, 0.0, 1.0, 1.0], dtype=tf.float32, shape=[1, 1, 4])
+    shape = (tf.shape(image_bytes) if decoded
+            else tf.image.extract_jpeg_shape(image_bytes))
+    sample_distorted_bounding_box = tf.image.sample_distorted_bounding_box(
+        shape,
+        bounding_boxes=bbox,
+        min_object_covered=0.1,
+        aspect_ratio_range=[0.75, 1.33],
+        area_range=[0.05, 1.0],
+        max_attempts=100,
+        use_image_if_no_bounding_boxes=True, seed= 1)
+    return image_bytes, label, sample_distorted_bounding_box, tf.cast(tf.random.uniform(shape=[], minval=0, maxval=2, dtype=tf.int32, seed=137), dtype=tf.bool)
+
+  def preprocess(self, image: tf.Tensor, label: tf.Tensor, sample_distorted_bounding_box: tf.Tensor = None, flip_flag: tf.Tensor = None
                 ) -> Tuple[tf.Tensor, tf.Tensor]:
     """Apply image preprocessing and augmentation to the image and label."""
     if self.is_training:
@@ -529,7 +548,9 @@ class DatasetBuilder:
           mean_subtract=self.config.mean_subtract,
           standardize=self.config.standardize,
           dtype=self.dtype,
-          augmenter=self.augmenter)
+          augmenter=self.augmenter, 
+          sample_distorted_bounding_box=sample_distorted_bounding_box, 
+          flip_flag=flip_flag)
     else:
       image = preprocessing.preprocess_for_eval(
           image,

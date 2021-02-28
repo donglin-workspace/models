@@ -213,7 +213,7 @@ def decode_and_center_crop(image_bytes: tf.Tensor,
   return image
 
 
-def decode_crop_and_flip(image_bytes: tf.Tensor, deterministic: bool) -> tf.Tensor:
+def decode_crop_and_flip(image_bytes: tf.Tensor, deterministic: bool, sample_distorted_bounding_box: tf.Tensor = None, flip_flag: tf.Tensor = None) -> tf.Tensor:
   """Crops an image to a random part of the image, then randomly flips.
 
   Args:
@@ -224,19 +224,19 @@ def decode_crop_and_flip(image_bytes: tf.Tensor, deterministic: bool) -> tf.Tens
 
   """
   decoded = image_bytes.dtype != tf.string
-  bbox = tf.constant([0.0, 0.0, 1.0, 1.0], dtype=tf.float32, shape=[1, 1, 4])
-  shape = (tf.shape(image_bytes) if decoded
-           else tf.image.extract_jpeg_shape(image_bytes))
-  sample_distorted_bounding_box = tf.image.sample_distorted_bounding_box(
-      shape,
-      bounding_boxes=bbox,
-      min_object_covered=0.1,
-      aspect_ratio_range=[0.75, 1.33],
-      area_range=[0.05, 1.0],
-      max_attempts=100,
-      use_image_if_no_bounding_boxes=True, seed= 1 if deterministic else 0)
+  # bbox = tf.constant([0.0, 0.0, 1.0, 1.0], dtype=tf.float32, shape=[1, 1, 4])
+  # shape = (tf.shape(image_bytes) if decoded
+  #          else tf.image.extract_jpeg_shape(image_bytes))
+  # sample_distorted_bounding_box = tf.image.sample_distorted_bounding_box(
+  #     shape,
+  #     bounding_boxes=bbox,
+  #     min_object_covered=0.1,
+  #     aspect_ratio_range=[0.75, 1.33],
+  #     area_range=[0.05, 1.0],
+  #     max_attempts=100,
+  #     use_image_if_no_bounding_boxes=True, seed= 1 if deterministic else 0)
   bbox_begin, bbox_size, _ = sample_distorted_bounding_box
-
+  
   # Reassemble the bounding box in the format the crop op requires.
   offset_height, offset_width, _ = tf.unstack(bbox_begin)
   target_height, target_width, _ = tf.unstack(bbox_size)
@@ -255,7 +255,9 @@ def decode_crop_and_flip(image_bytes: tf.Tensor, deterministic: bool) -> tf.Tens
                                             channels=3)
 
   # Flip to add a little more random distortion in.
-  cropped = tf.image.random_flip_left_right(cropped, seed=1 if deterministic else None)
+  if flip_flag:
+    cropped = tf.image.flip_left_right(cropped)
+  # cropped = tf.image.random_flip_left_right(cropped, seed=1 if deterministic else None)
   return cropped
 
 
@@ -363,7 +365,9 @@ def preprocess_for_train(image_bytes: tf.Tensor,
                          augmenter: Optional[augment.ImageAugment] = None,
                          mean_subtract: bool = False,
                          standardize: bool = False,
-                         dtype: tf.dtypes.DType = tf.float32) -> tf.Tensor:
+                         dtype: tf.dtypes.DType = tf.float32,
+                         sample_distorted_bounding_box: tf.Tensor = None, 
+                         flip_flag: tf.Tensor = None) -> tf.Tensor:
   """Preprocesses the given image for training.
 
   Args:
@@ -378,7 +382,7 @@ def preprocess_for_train(image_bytes: tf.Tensor,
   Returns:
     A preprocessed and normalized image `Tensor`.
   """
-  images = decode_crop_and_flip(image_bytes=image_bytes, deterministic=deterministic)
+  images = decode_crop_and_flip(image_bytes=image_bytes, deterministic=deterministic, sample_distorted_bounding_box=sample_distorted_bounding_box, flip_flag=flip_flag)
   images = resize_image(images, height=image_size, width=image_size)
   if mean_subtract:
     images = mean_image_subtraction(image_bytes=images, means=MEAN_RGB)

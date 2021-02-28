@@ -18,6 +18,7 @@
                 "--data_dir=/mnt/datasets/",
                 "--deterministic_init",
                 "--deterministic_input",
+                "--deterministic_tf",
                 "--config_file=./official/vision/image_classification/configs/examples/resnet/imagenet/gpu.yaml"
             ],
             "env": {
