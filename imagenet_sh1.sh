@@ -11,6 +11,6 @@
 # Other commands must follow all #SBATCH directives...
 
 conda activate py37
-export PHTHONPATH="./"
+export PYTHONPATH="./"
 
 python ./official/vision/image_classification/classifier_trainer.py --mode=train_and_eval --model_type=resnet --dataset=imagenet --model_dir=./ckpt_sh1/ --data_dir=/scratch/07464/donglinz/datasets/ILSVRC2012 --deterministic_input --config_file=./official/vision/image_classification/configs/examples/resnet/imagenet/gpu.yaml --project imagenet --group rf_randtf
