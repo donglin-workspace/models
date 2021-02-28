@@ -15,5 +15,3 @@ module list
 pwd
 date
 sleep 10
-
-# Launch serial code...
