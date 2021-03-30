@@ -36,7 +36,10 @@ from official.vision.image_classification.configs import configs
 from official.vision.image_classification.efficientnet import efficientnet_model
 from official.vision.image_classification.resnet import common
 from official.vision.image_classification.resnet import resnet_model
+import os 
 
+os.environ["TF_DETERMINISTIC_OPS"] = '1'
+os.environ["TF_CUDNN_DETERMINISTIC"] = '1'
 
 def get_models() -> Mapping[str, tf.keras.Model]:
   """Returns the mapping from model type name to Keras model."""
@@ -384,12 +387,11 @@ def train_and_eval(
 
   history = model.fit(
       train_dataset,
-      epochs=train_epochs,
-      steps_per_epoch=train_steps,
+      epochs=1,
+      steps_per_epoch=500,
       initial_epoch=initial_epoch,
       callbacks=callbacks,
-      verbose=2,
-      **validation_kwargs)
+      verbose=2)
 
   validation_output = None
   if not params.evaluation.skip_eval:

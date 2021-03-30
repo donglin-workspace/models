@@ -8,14 +8,14 @@ runtime:
 train_dataset:
   name: 'imagenet2012'
   data_dir: null
-  builder: 'tfds'
+  builder: 'synthetic'
   split: 'train'
   image_size: 224
   num_classes: 1000
   num_examples: 1281167
-  batch_size: 256
+  batch_size: 64
   use_per_replica_batch_size: True
-  dtype: 'float16'
+  dtype: 'float32'
   mean_subtract: True
   standardize: True
 validation_dataset:
