@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH -N 1
-#SBATCH -p GPU-share          # Queue (partition) name
+#SBATCH -p GPU          # Queue (partition) name
 #SBATCH -t 48:00:00        # Run time (hh:mm:ss)
 #SBATCH --gpus=4
 #SBATCH --mail-user=donglinzhuang@outlook.com
