@@ -2,7 +2,7 @@
 #SBATCH -N 1
 #SBATCH -p GPU-share          # Queue (partition) name
 #SBATCH -t 48:00:00        # Run time (hh:mm:ss)
-#SBATCH --gpus 2
+#SBATCH --gpus=4
 #SBATCH --mail-user=donglinzhuang@outlook.com
 #SBATCH --mail-type=all    # Send email at begin and end of job
 # Other commands must follow all #SBATCH directives...
