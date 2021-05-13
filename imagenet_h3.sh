@@ -1,14 +1,10 @@
 #!/bin/bash
-#SBATCH -J imagenet_h3           # Job name
-#SBATCH -o imagenet_h3.log       # Name of stdout output file
-#SBATCH -p v100          # Queue (partition) name
-#SBATCH -N 1               # Total # of nodes (must be 1 for serial)
-#SBATCH -n 80              # Total # of mpi tasks (should be 1 for serial)
+#SBATCH -N 1
+#SBATCH -p GPU-share          # Queue (partition) name
 #SBATCH -t 48:00:00        # Run time (hh:mm:ss)
+#SBATCH --gpus 2
 #SBATCH --mail-user=donglinzhuang@outlook.com
 #SBATCH --mail-type=all    # Send email at begin and end of job
-
-# Other commands must follow all #SBATCH directives...
 
 conda activate py37
 export PYTHONPATH="./"

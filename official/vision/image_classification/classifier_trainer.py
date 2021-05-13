@@ -393,8 +393,8 @@ def train_and_eval(
         base_learning_rate=learning_rate,
         params=params.model.optimizer.as_dict())
     
-    get_input_hash(iter(train_dataset))
-    get_weight_hash(model)
+    # get_input_hash(iter(train_dataset))
+    # get_weight_hash(model)
 
     metrics_map = _get_metrics(one_hot)
     metrics = [metrics_map[metric] for metric in params.train.metrics]
